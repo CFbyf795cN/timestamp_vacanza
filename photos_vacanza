@@ -1,1 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Upload photos</title>
+</head>
+<body>
 
+<h2>Envoyer une photo</h2>
+
+<input type="text" id="prenom" placeholder="Ton prénom"><br><br>
+<input type="file" id="file"><br><br>
+<button onclick="upload()">Envoyer</button>
+
+<p id="status"></p>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+const supabase = supabase.createClient(
+  "https://TON-PROJET.supabase.co",
+  "TA-ANON-KEY"
+)
+
+async function upload() {
+  const file = document.getElementById("file").files[0]
+  const prenom = document.getElementById("prenom").value
+
+  if (!file || !prenom) {
+    alert("Remplis tout")
+    return
+  }
+
+  const fileName = Date.now() + "_" + file.name
+
+  // upload fichier
+  const { data, error } = await supabase.storage
+    .from("photos")
+    .upload(fileName, file)
+
+  if (error) {
+    document.getElementById("status").innerText = "Erreur upload"
+    return
+  }
+
+  // sauvegarde en base
+  await supabase.from("uploads").insert([
+    {
+      prenom: prenom,
+      file_path: fileName
+    }
+  ])
+
+  document.getElementById("status").innerText = "Photo envoyée ✅"
+}
+</script>
+
+</body>
+</html>
