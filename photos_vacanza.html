@@ -5,53 +5,61 @@
 </head>
 <body>
 
-<h2>Envoyer une photo</h2>
+<h2>Envoyer des photos</h2>
 
 <input type="text" id="prenom" placeholder="Ton prénom"><br><br>
-<input type="file" id="file" multiple><br><br>
+<input type="file" id="file" multiple><br><br> <!-- MULTIPLE ajouté -->
 <button onclick="upload()">Envoyer</button>
 
 <p id="status"></p>
 
+<!-- 1. Librairie Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
+<!-- 2. Ton script JS -->
 <script>
-const supabase = supabase.createClient(
-  "https://TON-PROJET.supabase.co",
-  "TA-ANON-KEY"
-)
+  // Crée le client Supabase
+  const supabase = supabase.createClient(
+    "https://TON-PROJET.supabase.co",
+    "TA-ANON-KEY"
+  )
 
-async function upload() {
-  const file = document.getElementById("file").files[0]
-  const prenom = document.getElementById("prenom").value
+  // ======= Ton code upload ici =======
+  async function upload() {
+    const files = document.getElementById("file").files
+    const prenom = document.getElementById("prenom").value
 
-  if (!file || !prenom) {
-    alert("Remplis tout")
-    return
-  }
-
-  const fileName = Date.now() + "_" + file.name
-
-  // upload fichier
-  const { data, error } = await supabase.storage
-    .from("photos")
-    .upload(fileName, file)
-
-  if (error) {
-    document.getElementById("status").innerText = "Erreur upload"
-    return
-  }
-
-  // sauvegarde en base
-  await supabase.from("uploads").insert([
-    {
-      prenom: prenom,
-      file_path: fileName
+    if (!files.length || !prenom) {
+      alert("Remplis tout")
+      return
     }
-  ])
 
-  document.getElementById("status").innerText = "Photo envoyée ✅"
-}
+    const status = document.getElementById("status")
+    status.innerText = "Upload en cours…"
+
+    for (let file of files) {
+      const fileName = Date.now() + "_" + file.name
+
+      // upload dans Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from("photos")
+        .upload(fileName, file)
+
+      if (uploadError) {
+        console.error("Erreur upload:", uploadError)
+        continue
+      }
+
+      // sauvegarde dans la table uploads
+      await supabase.from("uploads").insert([
+        { prenom: prenom, file_path: fileName }
+      ])
+    }
+
+    status.innerText = "Toutes les photos ont été envoyées ✅"
+    document.getElementById("file").value = "" // reset input
+  }
+  // ==================================
 </script>
 
 </body>
