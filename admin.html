@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin</title>
+</head>
+<body>
+
+<h2>Admin - Photos reçues</h2>
+
+<div id="login">
+  <input type="email" id="email" placeholder="email">
+  <input type="password" id="password" placeholder="password">
+  <button onclick="login()">Login</button>
+</div>
+
+<div id="content" style="display:none;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+const supabase = supabase.createClient(
+  "https://TON-PROJET.supabase.co",
+  "TA-ANON-KEY"
+)
+
+async function login() {
+  const email = document.getElementById("email").value
+  const password = document.getElementById("password").value
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  })
+
+  if (!error) {
+    document.getElementById("login").style.display = "none"
+    loadPhotos()
+  }
+}
+
+async function loadPhotos() {
+  const { data } = await supabase.from("uploads").select("*")
+
+  const container = document.getElementById("content")
+  container.style.display = "block"
+
+  for (let item of data) {
+    const { data: urlData } = await supabase.storage
+      .from("photos")
+      .createSignedUrl(item.file_path, 60)
+
+    const div = document.createElement("div")
+    div.innerHTML = `
+      <p>${item.prenom}</p>
+      <img src="${urlData.signedUrl}" width="200">
+    `
+    container.appendChild(div)
+  }
+}
+</script>
+
+</body>
+</html>
